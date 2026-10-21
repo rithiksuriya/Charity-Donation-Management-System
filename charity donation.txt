@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Support Our Cause</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      color: #111;
+      min-height: 100vh;
+      background: linear-gradient(to right, #e0f2fe, #f0f9ff);
+      padding: 2rem;
+      /* Removed flexbox to make slides normal block */
+    }
+    .slide {
+      display: none;
+      width: 100%;
+      max-width: 700px;
+      background-color: #ffffff;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      margin: 2rem auto; /* center horizontally with margin */
+    }
+    .slide.active {
+      display: block;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #1d4ed8;
+      margin-bottom: 1rem;
+    }
+    p {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: #333;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #1f2937;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+      font-size: 1rem;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #3b82f6;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #2563eb;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      background-color: #f9fafb;
+      border-left: 4px solid #3b82f6;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+    .nav-btn {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    footer {
+      margin-top: 2rem;
+      font-size: 0.875rem;
+      color: #6b7280;
+      text-align: center;
+    }
+    .summary-box {
+      background-color: #f0fdf4;
+      border-left: 4px solid #10b981;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    .filter-box {
+      margin-top: 1rem;
+    }
+    .thank-you {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #059669;
+      text-align: center;
+      margin-top: 2rem;
+    }
+    .highlight {
+      font-weight: bold;
+      color: #dc2626;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Slide 1: Donation Form -->
+<div class="slide active" id="formSlide">
+  <h1>Che Guevara Donation</h1>
+  <p>Your donation helps us provide essential services to those in need. Every contribution counts.</p>
+  <form id="donationForm" onsubmit="submitDonation(event)">
+    <label for="name">Donor Name</label>
+    <input type="text" id="name" name="from_name" required />
+    <label for="email">Email Address</label>
+    <input type="email" id="email" name="to_email" required />
+    <label for="amount">Donation Amount ($)</label>
+    <input type="number" id="amount" name="donation_amount" required />
+    <label for="message">Message (optional)</label>
+    <textarea id="message" name="donor_message"></textarea>
+    <button type="submit">Donate Now</button>
+  </form>
+</div>
+
+<!-- Slide 2: Donor List -->
+<div class="slide" id="detailsSlide">
+  <h2>All Donors</h2>
+  <ul id="donorList"></ul>
+  <div class="nav-btn">
+    <button onclick="goBack()">Add Another Donor</button>
+    <button onclick="goToSummary()">View Summary</button>
+  </div>
+</div>
+
+<!-- Slide 3: Summary and Download -->
+<div class="slide" id="summarySlide">
+  <h2>Donation Summary</h2>
+  <div class="summary-box">
+    <strong>Total Donors:</strong> <span id="totalDonors"></span><br>
+    <strong>Total Amount:</strong> $<span id="totalAmount"></span>
+  </div>
+  <div class="summary-box">
+    <strong>Donation Categories:</strong><br>
+    <em>Education, Food, Shelter (Coming Soon...)</em>
+  </div>
+  <div class="nav-btn">
+    <button onclick="downloadDonorsAsPDF()">Download Donor List (PDF)</button>
+    <button onclick="goToAdvanced()">More Options</button>
+  </div>
+</div>
+
+<!-- Slide 4: Advanced Filters -->
+<div class="slide" id="advancedSlide">
+  <h2>Advanced Tools</h2>
+  <div class="filter-box">
+    <label for="filterAmount">Filter by Minimum Amount</label>
+    <input type="number" id="filterAmount" placeholder="Enter minimum amount"/>
+    <button onclick="filterDonors()">Filter</button>
+  </div>
+  <div id="filteredList" style="margin-top: 1rem;"></div>
+  <div class="thank-you">
+    🎉 Thank you for your support! Every donation makes a <span class="highlight">real difference</span>.
+  </div>
+  <button onclick="goBackToSummary()">Back to Summary</button>
+</div>
+
+<footer>
+  &copy; <span id="year"></span> Hope Foundation. All rights reserved.
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+  const donors = [];
+
+  function submitDonation(e) {
+    e.preventDefault();
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const message = document.getElementById('message').value.trim() || 'N/A';
+
+    if (!name || !email || amount <= 0) {
+      alert("Please fill all required fields with valid data.");
+      return;
+    }
+
+    donors.push({ name, email, amount, message });
+    updateDonorList();
+    alert("Thank you for your donation!");
+
+    showSlide('detailsSlide');
+    document.getElementById('donationForm').reset();
+  }
+
+  function updateDonorList() {
+    const donorList = document.getElementById('donorList');
+    donorList.innerHTML = '';
+    donors.forEach((donor, index) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>Donor #${index + 1}</strong><br>
+        Name: ${donor.name}<br>Email: ${donor.email}<br>
+        Amount: $${donor.amount.toFixed(2)}<br>Message: ${donor.message}`;
+      donorList.appendChild(li);
+    });
+  }
+
+  function showSlide(id) {
+    const slides = document.querySelectorAll('.slide');
+    slides.forEach(slide => slide.classList.remove('active'));
+    const target = document.getElementById(id);
+    if (target) {
+      target.classList.add('active');
+    }
+    if (id === 'summarySlide') updateSummary();
+    if (id === 'advancedSlide') clearFilterResults();
+  }
+
+  function goBack() {
+    showSlide('formSlide');
+  }
+
+  function goToSummary() {
+    showSlide('summarySlide');
+  }
+
+  function goToAdvanced() {
+    showSlide('advancedSlide');
+  }
+
+  function goBackToSummary() {
+    showSlide('summarySlide');
+  }
+
+  function updateSummary() {
+    document.getElementById('totalDonors').textContent = donors.length;
+    const total = donors.reduce((acc, donor) => acc + donor.amount, 0);
+    document.getElementById('totalAmount').textContent = total.toFixed(2);
+  }
+
+  function downloadDonorsAsPDF() {
+    if (donors.length === 0) {
+      alert("No donors to export.");
+      return;
+    }
+    const { jsPDF } = window.jspdf || window.jsPDF;
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text("Donor List", 14, 15);
+    donors.forEach((donor, i) => {
+      let y = 25 + i * 10;
+      if (y > 280) {
+        doc.addPage();
+        y = 15;
+      }
+      doc.text(`${i + 1}. ${donor.name} - $${donor.amount.toFixed(2)}`, 14, y);
+    });
+    doc.save("donor-list.pdf");
+  }
+
+  function filterDonors() {
+    const minAmountInput = document.getElementById('filterAmount').value;
+    const minAmount = parseFloat(minAmountInput);
+    const filteredListEl = document.getElementById('filteredList');
+    filteredListEl.innerHTML = "";
+
+    if (isNaN(minAmount) || minAmount < 0) {
+      alert("Please enter a valid minimum amount.");
+      return;
+    }
+
+    const filtered = donors.filter(donor => donor.amount >= minAmount);
+    if (filtered.length === 0) {
+      filteredListEl.textContent = `No donors found with amount >= $${minAmount.toFixed(2)}.`;
+      return;
+    }
+
+    filtered.forEach(donor => {
+      const div = document.createElement('div');
+      div.textContent = `${donor.name} donated $${donor.amount.toFixed(2)}`;
+      filteredListEl.appendChild(div);
+    });
+  }
+
+  function clearFilterResults() {
+    document.getElementById('filterAmount').value = "";
+    document.getElementById('filteredList').innerHTML = "";
+  }
+</script>
+
+<!-- jsPDF library for PDF generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+</body>
+</html>
